@@ -1,12 +1,16 @@
 from openai import OpenAI
 from .config import get_config
+from .openai_utils import safe_openai_call
 
 
 def get_stock_news_openai(query, start_date, end_date):
     config = get_config()
     client = OpenAI(base_url=config["backend_url"])
 
-    response = client.responses.create(
+    response = safe_openai_call(
+        client=client,
+        method_name="responses.create",
+        fallback_value={"output": [None, {"content": [{"text": f"Unable to fetch news for {query} due to API limitations. Please try again later."}]}]},
         model=config["quick_think_llm"],
         input=[
             {
@@ -34,14 +38,20 @@ def get_stock_news_openai(query, start_date, end_date):
         store=True,
     )
 
-    return response.output[1].content[0].text
+    if response and "output" in response:
+        return response.output[1].content[0].text
+    else:
+        return f"Unable to fetch news for {query} due to API limitations. Please try again later."
 
 
 def get_global_news_openai(curr_date, look_back_days=7, limit=5):
     config = get_config()
     client = OpenAI(base_url=config["backend_url"])
 
-    response = client.responses.create(
+    response = safe_openai_call(
+        client=client,
+        method_name="responses.create",
+        fallback_value={"output": [None, {"content": [{"text": f"Unable to fetch global news from {look_back_days} days before {curr_date} due to API limitations. Please try again later."}]}]},
         model=config["quick_think_llm"],
         input=[
             {
@@ -69,14 +79,20 @@ def get_global_news_openai(curr_date, look_back_days=7, limit=5):
         store=True,
     )
 
-    return response.output[1].content[0].text
+    if response and "output" in response:
+        return response.output[1].content[0].text
+    else:
+        return f"Unable to fetch global news from {look_back_days} days before {curr_date} due to API limitations. Please try again later."
 
 
 def get_fundamentals_openai(ticker, curr_date):
     config = get_config()
     client = OpenAI(base_url=config["backend_url"])
 
-    response = client.responses.create(
+    response = safe_openai_call(
+        client=client,
+        method_name="responses.create",
+        fallback_value={"output": [None, {"content": [{"text": f"Unable to fetch fundamental data for {ticker} due to API limitations. Please try again later or use Alpha Vantage data source."}]}]},
         model=config["quick_think_llm"],
         input=[
             {
@@ -104,4 +120,7 @@ def get_fundamentals_openai(ticker, curr_date):
         store=True,
     )
 
-    return response.output[1].content[0].text
+    if response and "output" in response:
+        return response.output[1].content[0].text
+    else:
+        return f"Unable to fetch fundamental data for {ticker} due to API limitations. Please try again later or use Alpha Vantage data source."

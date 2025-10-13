@@ -1,6 +1,7 @@
 import chromadb
 from chromadb.config import Settings
 from openai import OpenAI
+from ...dataflows.openai_utils import safe_openai_call
 
 
 class FinancialSituationMemory:
@@ -16,10 +17,20 @@ class FinancialSituationMemory:
     def get_embedding(self, text):
         """Get OpenAI embedding for a text"""
         
-        response = self.client.embeddings.create(
-            model=self.embedding, input=text
+        response = safe_openai_call(
+            client=self.client,
+            method_name="embeddings.create",
+            fallback_value={"data": [{"embedding": [0.0] * 1536}]},  # Default embedding size for text-embedding-3-small
+            model=self.embedding,
+            input=text
         )
-        return response.data[0].embedding
+        
+        if response and "data" in response and len(response["data"]) > 0:
+            return response.data[0].embedding
+        else:
+            # Return a default embedding vector if API call fails
+            print(f"Warning: Failed to get embedding for text, using default vector")
+            return [0.0] * 1536
 
     def add_situations(self, situations_and_advice):
         """Add financial situations and their corresponding advice. Parameter is a list of tuples (situation, rec)"""
