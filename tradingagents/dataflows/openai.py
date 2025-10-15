@@ -7,10 +7,7 @@ def get_stock_news_openai(query, start_date, end_date):
     config = get_config()
     client = OpenAI(base_url=config["backend_url"])
 
-    response = safe_openai_call(
-        client=client,
-        method_name="responses.create",
-        fallback_value={"output": [None, {"content": [{"text": f"Unable to fetch news for {query} due to API limitations. Please try again later."}]}]},
+    response = client.responses.create(
         model=config["quick_think_llm"],
         input=[
             {

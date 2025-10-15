@@ -78,3 +78,5 @@ def safe_openai_call(client: OpenAI, method_name: str, fallback_value=None, **kw
     except Exception as e:
         print(f"OpenAI API call failed, using fallback: {e}")
         return fallback_value
+
+
